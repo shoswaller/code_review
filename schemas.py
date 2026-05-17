@@ -117,6 +117,46 @@ def render_action_plan(plan: ActionPlan) -> str:
     return "\n".join(lines)
 
 
+# ── 项目级数据结构 ──
+
+class FileReviewSummary(BaseModel):
+    """单文件审查摘要，用于项目级汇总。"""
+    file_path: str = Field(description="文件路径")
+    verdict: str = Field(description="该文件的审查裁定")
+    lines: int = Field(description="文件行数")
+    critical_count: int = Field(default=0, description="Critical 问题数")
+    major_count: int = Field(default=0, description="Major 问题数")
+    minor_count: int = Field(default=0, description="Minor 问题数")
+    nit_count: int = Field(default=0, description="Nit 问题数")
+    style_issues: int = Field(default=0)
+    security_issues: int = Field(default=0)
+    performance_issues: int = Field(default=0)
+    logic_issues: int = Field(default=0)
+
+
+class ProjectOverview(BaseModel):
+    """项目概览。"""
+    project_root: str = Field(description="项目根目录")
+    total_files: int = Field(description="代码文件总数")
+    total_lines: int = Field(description="总代码行数")
+    total_functions: int = Field(description="总函数/方法数")
+    total_classes: int = Field(description="总类数")
+    language_distribution: dict = Field(default_factory=dict, description="语言分布")
+    directory_tree: str = Field(description="目录树结构")
+
+
+class ProjectReviewReport(BaseModel):
+    """项目级审查汇总报告。"""
+    overview: ProjectOverview = Field(description="项目概览")
+    file_summaries: List[FileReviewSummary] = Field(description="各文件审查摘要")
+    health_score: int = Field(description="项目健康度评分 0-100")
+    total_findings: int = Field(description="发现的问题总数")
+    critical_findings: List[str] = Field(description="Critical 级别问题列表")
+    major_findings: List[str] = Field(description="Major 级别问题列表")
+    top_issues: List[str] = Field(description="TOP 10 最需关注的问题")
+    recommendation: str = Field(description="项目级总体建议")
+
+
 def render_final_decision(decision: FinalDecision) -> str:
     lines = [
         f"## 最终审查裁定",

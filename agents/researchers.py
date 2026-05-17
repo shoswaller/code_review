@@ -24,7 +24,7 @@ _APPROVE_PROMPT = """你是一位"同意合入"研究员。你的任务是基于
 ## 输出格式
 在辩论回复末尾，用以下 JSON 更新辩论状态:
 ```json
-{"count": <当前轮次>, "current_response": "Approve: <你的核心论据摘要>"}
+{{"count": <当前轮次>, "current_response": "Approve: <你的核心论据摘要>"}}
 ```
 
 ## 分析师报告

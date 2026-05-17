@@ -211,6 +211,46 @@ def build_workflow(
     return workflow
 
 
+def build_project_workflow(
+    llm: Any,
+    selected_analysts: list | None = None,
+    max_debate_rounds: int = 2,
+    max_risk_rounds: int = 2,
+) -> StateGraph:
+    """构建项目审查图 —— 先进行项目级架构分析，再转入逐文件审查。
+
+    项目审查图结构:
+    START → [Project Architect ↔ tools_project] → END
+    （逐文件审查由 main.py 中的 run_project_review 使用 build_workflow 逐个执行）
+    """
+    if selected_analysts is None:
+        selected_analysts = ["style", "security", "performance", "logic"]
+
+    from .agents import create_project_architect, create_msg_clear
+    from .tools import ANALYST_TOOLS
+    from .conditional_logic import _make_analyst_router
+
+    workflow = StateGraph(AgentState)
+
+    # 项目架构分析节点
+    workflow.add_node("Project Architect", create_project_architect(llm))
+    workflow.add_node("Clear Project", create_msg_clear())
+    workflow.add_node("tools_project", ToolNode(ANALYST_TOOLS["project"]))
+
+    workflow.add_edge(START, "Project Architect")
+
+    project_router = _make_analyst_router("tools_project", "Clear Project")
+    workflow.add_conditional_edges(
+        "Project Architect",
+        project_router,
+        {"tools_project": "tools_project", "Clear Project": "Clear Project"},
+    )
+    workflow.add_edge("tools_project", "Project Architect")
+    workflow.add_edge("Clear Project", END)
+
+    return workflow
+
+
 def create_initial_state(
     file_path: str,
     past_context: str = "",

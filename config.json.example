@@ -1,0 +1,9 @@
+{
+    "base_url": "https://api.deepseek.com",
+    "api_key": "sk-your-api-key-here",
+    "model": "deepseek-chat",
+
+    "model_kwargs": {
+        "temperature": 0.1
+    }
+}

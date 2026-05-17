@@ -11,7 +11,7 @@
 """
 
 from typing import Any
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import AIMessage
 from ..tools import read_file, count_lines, find_pattern, check_sql_injection
 
@@ -38,13 +38,13 @@ def _create_analyst(
 
     prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt),
-        ("human", "请审查文件: {file_path}\n\n提示：先用 read_file 读取文件，再用其他工具深入分析，最后给出完整的审查报告。"),
+        MessagesPlaceholder(variable_name="messages"),
     ])
 
     chain = prompt | llm_with_tools
 
     def node(state):
-        result = chain.invoke({"file_path": state["file_path"]})
+        result = chain.invoke({"messages": state["messages"]})
         # 如果消息中不含 tool_calls，说明报告已完成，存入对应字段
         updates = {"messages": [result]}
         if isinstance(result, AIMessage) and not (hasattr(result, "tool_calls") and result.tool_calls):
@@ -186,4 +186,55 @@ def create_logic_analyst(llm):
         [read_file, find_pattern, count_lines],
         _LOGIC_PROMPT,
         "logic_report",
+    )
+
+
+# ── 5. 项目架构分析师（项目模式专用） ──
+
+_PROJECT_ARCHITECT_PROMPT = """你是一位资深项目架构审查专家，负责分析项目整体结构、模块划分和依赖关系。
+
+## 审查维度
+1. **项目结构**: 目录组织是否合理？模块划分是否清晰？
+2. **依赖关系**: 是否存在循环依赖？外部依赖是否过重？
+3. **代码分布**: 文件大小是否合理（是否存在 God Class / 巨大文件）？
+4. **架构模式**: 是否符合常见的架构模式（MVC、分层架构等）？
+5. **可维护性**: 是否有明显的架构腐化迹象？
+
+## 工作流程
+1. 用 get_directory_structure 了解项目目录布局
+2. 用 list_project_files 列出所有代码文件
+3. 用 detect_project_type 识别技术栈
+4. 用 read_file 阅读关键文件（配置文件、入口文件等）
+5. 用 analyze_imports 分析关键文件的依赖
+6. 输出项目架构审查报告
+
+## 输出格式
+### 项目架构审查报告
+**技术栈**: [检测到的技术栈]
+**架构评分**: [1-10]
+**总体评价**: [2-3 句]
+
+**架构问题**:
+- 问题描述 → 建议
+
+**亮点**:
+- 做得好的地方
+"""
+
+
+def create_project_architect(llm):
+    from ..tools import (
+        list_project_files,
+        get_directory_structure,
+        analyze_imports,
+        detect_project_type,
+        read_file,
+        count_lines,
+    )
+    return _create_analyst(
+        llm, "ProjectArchitect",
+        [list_project_files, get_directory_structure, analyze_imports,
+         detect_project_type, read_file, count_lines],
+        _PROJECT_ARCHITECT_PROMPT,
+        "project_overview",
     )

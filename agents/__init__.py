@@ -8,6 +8,7 @@ from .analysts import (
     create_security_analyst,
     create_performance_analyst,
     create_logic_analyst,
+    create_project_architect,
 )
 from .researchers import (
     create_approve_researcher,

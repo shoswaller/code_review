@@ -57,5 +57,12 @@ class AgentState(MessagesState):
     # 第五层：最终裁定
     final_decision: Annotated[str, "Lead Reviewer 的最终裁定"]
 
+    # 项目级字段
+    project_root: Annotated[str, "项目根目录（项目模式）"]
+    file_list: Annotated[list, "待审查的文件列表（项目模式）"]
+    project_overview: Annotated[str, "项目概览报告"]
+    project_report: Annotated[str, "项目汇总审查报告"]
+    file_reports: Annotated[dict, "各文件审查报告汇总: {file_path: report_text}"]
+
     # 记忆
     past_context: Annotated[str, "历史审查记录上下文，注入到初始 state"]
